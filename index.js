@@ -16,14 +16,23 @@ const gamepasses = {
 };
 
 async function getCsrfToken(cookie) {
-  const res = await fetch("https://auth.roblox.com/v2/logout", {
-    method: "POST",
-    headers: {
-      Cookie: `.ROBLOSECURITY=${cookie}`,
-      "User-Agent": "Roblox/WinInet",
-    },
-  });
-  return res.headers.get("x-csrf-token");
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  try {
+    const res = await fetch("https://auth.roblox.com/v2/logout", {
+      method: "POST",
+      headers: {
+        Cookie: `.ROBLOSECURITY=${cookie}`,
+        "User-Agent": "Roblox/WinInet",
+      },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    return res.headers.get("x-csrf-token");
+  } catch (e) {
+    clearTimeout(timeout);
+    throw new Error("CSRF token request timed out or failed.");
+  }
 }
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -64,24 +73,38 @@ client.on("interactionCreate", async (interaction) => {
     form.append("description", `Changed to ${newPrice} by ${interaction.user.tag}.`);
     form.append("price", newPrice);
 
-    const res = await fetch(
-      `https://apis.roblox.com/game-passes/v1/universes/${UNIVERSE_ID}/game-passes/${gamepassId}`,
-      {
-        method: "PATCH",
-        headers: {
-          "User-Agent": "Roblox/WinInet",
-          ...authHeaders,
-          ...form.getHeaders(),
-        },
-        body: form,
-      }
-    );
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    let res;
+    try {
+      res = await fetch(
+        `https://apis.roblox.com/game-passes/v1/universes/${UNIVERSE_ID}/game-passes/${gamepassId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "User-Agent": "Roblox/WinInet",
+            ...authHeaders,
+            ...form.getHeaders(),
+          },
+          body: form,
+          signal: controller.signal,
+        }
+      );
+      clearTimeout(timeout);
+    } catch (e) {
+      clearTimeout(timeout);
+      await interaction.editReply({
+        flags: 64,
+        content: `<:bot:1508971229241933925> Request timed out — Roblox API did not respond. Try again in a moment.`,
+      });
+      return;
+    }
 
     const text = await res.text();
     console.log("Roblox response:", res.status, text);
 
     if (res.ok) {
-      // ✅ Success embed
       await interaction.editReply({
         flags: 32768,
         components: [
@@ -130,7 +153,6 @@ client.on("interactionCreate", async (interaction) => {
         ],
       });
     } else {
-      // ❌ Error message (ephemeral)
       await interaction.editReply({
         flags: 64,
         content: `<:bot:1508971229241933925> Roblox error: Status ${res.status} — ${text}`,
