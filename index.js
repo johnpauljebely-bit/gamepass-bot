@@ -17,7 +17,7 @@ const gamepasses = {
 
 async function getCsrfToken(cookie) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000);
+ const timeout = setTimeout(() => controller.abort(), 30000);
   try {
     const res = await fetch("https://auth.roblox.com/v2/logout", {
       method: "POST",
