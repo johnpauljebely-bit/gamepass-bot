@@ -143,7 +143,7 @@ client.on("interactionCreate", async (interaction) => {
                 items: [
                   {
                     media: {
-                      url: "https://media.discordapp.net/attachments/1508989759261774126/1508989773283328030/image.png?ex=6a1a2ebd&is=6a18dd3d&hm=61ba01876c7213cbf8f710caa3ff6dad1c840f2f36fbee3cea9b6f553125e6d0&=&format=webp&quality=lossless&width=2784&height=210",
+                      url: "https://media.discordapp.net/attachments/1511520008549830746/1511520162711474186/image.png?ex=6a260659&is=6a24b4d9&hm=eab7d9e394ad75a877c3895e7aa8ebf68cb67845c69d2e1566e5370308178244&=&format=webp&quality=lossless&width=2784&height=140",
                     },
                   },
                 ],
